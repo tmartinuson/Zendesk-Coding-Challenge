@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from tkinter import Frame, Label, Listbox, Scrollbar, Tk, Canvas, Entry, Text, Button, PhotoImage, Toplevel
-from tkinter.constants import ACTIVE, BOTTOM, BROWSE, CENTER, LEFT, RIGHT, SINGLE, TOP
+from tkinter.constants import ACTIVE, BOTTOM, BROWSE, CENTER, GROOVE, LEFT, RAISED, RIDGE, RIGHT, SINGLE, SUNKEN, TOP
 from types import CellType
 import requests
 from datetime import datetime
@@ -9,6 +9,7 @@ from datetime import datetime
 
 OUTPUT_PATH = Path(__file__).parent
 ASSETS_PATH = OUTPUT_PATH / Path("./assets")
+DESC_WIDTH = 10
 
 def relative_to_assets(path: str) -> Path:
     return ASSETS_PATH / Path(path)
@@ -25,26 +26,37 @@ class GUI:
         self.pageLabel = None
         self.page = 1
         self.Auth = Auth
+        self.ticketFrame = None
         self.run()
 
     def buildTicket(self, ticket):
         # Select items to display in the list
-        ans = (str(ticket["id"]), ticket["subject"], "Opened by: " + str(ticket["requester_id"]), "on " + str(datetime.strptime(ticket["created_at"], "%Y-%m-%dT%H:%M:%SZ").date()))
+        summarize = ticket["subject"] if len(ticket["subject"]) < 15 else ticket["subject"][:15] + "..."
+        ans = (str(ticket["id"]), summarize, "Opened by: " + str(ticket["requester_id"]), "on " + str(datetime.strptime(ticket["created_at"], "%Y-%m-%dT%H:%M:%SZ").date()))
         return " ".join(ans)
 
     def buildTicketFrame(self, ticketID, master):
         # TODO: Must build a try except block as some json tags are not required
         ticket = self.data["tickets"][(int(ticketID)%25)-1]
         frame = Frame( master=master , bg="#FFFFFF" )
-        subject = Label( frame, text="Ticket Subject:", pady=4, font=("NotoSerif Regular", 15 * -1), fg="#283423", bg="#FFFFFF")
-        subject.pack( side=TOP )
-        title = Label( frame, text="\"" + ticket["subject"] + "\"", pady=4, font=("NotoSerif Regular", 15 * -1), fg="#283423", bg="#FFFFFF")
-        title.pack( side=TOP )
-        submitter = Label( frame, text="Owner ID: " + str(ticket["requester_id"]), pady=4, font=("NotoSerif Regular", 15 * -1), fg="#283423", bg="#FFFFFF")
-        submitter.pack( side=TOP )
+        if self.ticketFrame is not None:
+            self.ticketFrame.destroy()
+        self.ticketFrame = frame
+        Label( frame, text="Ticket Stub:", pady=4, font=("NotoSerif Regular", 20 * -1), fg="#283423", bg="#FFFFFF").pack( side=TOP )
+        Label( frame, text="Subject: \"" + str(ticket["subject"]).capitalize() + "\"", pady=2, font=("NotoSerif Regular", 12 * -1), fg="#283423", bg="#FFFFFF").pack( side=TOP, anchor="w" )
+        Label( frame, text="Owner ID: " + str(ticket["requester_id"]), pady=2, font=("NotoSerif Regular", 12 * -1), fg="#283423", bg="#FFFFFF").pack( side=TOP, anchor="w" )
+        Label( frame, text="Created at: " + str(datetime.strptime(ticket["created_at"], "%Y-%m-%dT%H:%M:%SZ").date()) + " Time: " + str(ticket["created_at"])[-9:-1], pady=2, font=("NotoSerif Regular", 12 * -1), fg="#283423", bg="#FFFFFF").pack( side=TOP, anchor="w" )
+        Label( frame, text="Priority: " + str(ticket["priority"]).capitalize(), pady=2, font=("NotoSerif Regular", 12 * -1), fg="#283423", bg="#FFFFFF").pack( side=TOP, anchor="w" )
+        Label( frame, text="Status: " + str(ticket["status"]).capitalize(), pady=2, font=("NotoSerif Regular", 12 * -1), fg="#283423", bg="#FFFFFF").pack( side=TOP, anchor="w" )
+        Label( frame, text="Description: ", pady=2, font=("NotoSerif Regular", 12 * -1), fg="#283423", bg="#FFFFFF").pack( side=TOP, anchor="w" )
+        descAc = str(ticket["description"]).split(" ")
+        numLines = int(len(descAc)/DESC_WIDTH)
+        for i in range(0,numLines):
+            Label( frame, text=" ".join(descAc[i*DESC_WIDTH:i*DESC_WIDTH+DESC_WIDTH]), font=("NotoSerif Regular", 10 * -1), fg="#283423", bg="#FFFFFF").pack( side=TOP )
+        Label( frame, text=" ".join(descAc[DESC_WIDTH*numLines:]), font=("NotoSerif Regular", 10 * -1), fg="#283423", bg="#FFFFFF").pack( side=TOP )
         frame.place(
             x=455,
-            y=122,
+            y=118,
             width=420
         )
 
@@ -136,13 +148,24 @@ class GUI:
             master=window,
             bg="#FFFFFF"
         )
-
+        pageNavLbl = Label(
+            master = buttonFrame,
+            text = "Page Navigator",
+            fg = "#283423",
+            bg = "#FFFFFF",
+            font = ("NotoSerif Regular", 20 * -1)
+        )
+        pageNavLbl.pack( side=TOP )
         tickets = Listbox(
             master = buttonFrame,
             selectmode = SINGLE,
             height = 25,
-            borderwidth=0,
-            width = 100
+            borderwidth=2,
+            width = 100,
+            highlightbackground="#283423",
+            bg = "#FFFFFF",
+            relief=RIDGE,
+            exportselection=False
         )
         self.listbox = tickets
         self.master = window
@@ -154,6 +177,7 @@ class GUI:
             text="Prev",
             fg="#283423",
             bg="#FFFFFF",
+            highlightbackground="#FFFFFF",
             command=lambda: self.clickChangePage(dir=-1, enter=False)
         )
         leftButton.pack( side=LEFT )
@@ -162,6 +186,7 @@ class GUI:
             text="Next",
             fg="#283423",
             bg="#FFFFFF",
+            highlightbackground="#FFFFFF",
             command=lambda: self.clickChangePage(dir=1, enter=False)
         )
         rightButton.pack( side=RIGHT )
@@ -174,7 +199,8 @@ class GUI:
             buttonFrame,
             fg="#283423",
             bg="#FFFFFF",
-            width=2
+            width=2,
+            highlightbackground="#FFFFFF"
         )
         pageNum.insert(0,str(self.page))
         pageNum.bind('<Return>', lambda x: self.clickChangePage(int(pageNum.get()), enter=True))

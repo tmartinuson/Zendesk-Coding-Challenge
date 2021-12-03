@@ -1,9 +1,9 @@
 import requests
 import gui
-from tkinter import Frame, Label, Tk, Entry, Button, messagebox
+from tkinter import Frame, Label, PhotoImage, Tk, Entry, Button, messagebox
 from tkinter.constants import LEFT, RIGHT, TOP
 
-# URL = "https://zcctmart.zendesk.com/api/v2/tickets"
+#URL = "https://zcctmart.zendesk.com/api/v2/ticketz"
 URL = "https://zcctmart.zendesk.com/api/v2/tickets.json?per_page=25&page=1"
 
 # Login page
@@ -11,18 +11,23 @@ window = Tk()
 window.title("Login Page")
 window.geometry("450x200")
 window.configure(bg = "#FFFFFF")
+window.iconphoto(True, PhotoImage(file=gui.relative_to_assets("zendesk.png")))
 
 def tryLoginAndJson( user , passw ):
     try:
         auth = (user, passw)
         re = requests.get(url=URL, auth=auth)
         if not re.ok:
-            raise Exception("Login failed")
+            raise IOError(re.reason)
         window.destroy()
         g = gui.GUI(re.json(), auth)
-    except Exception as e:
-        print(e)
-        messagebox.showerror(title="Login failed", message="Username and/or password are incorrect. Please try again")
+    except IOError as e:
+        if str(e) == "Unauthorized":
+            messagebox.showerror(title="Login failed", message="Username and/or password are incorrect. Please try again")
+        elif str(e) == "Not Found":
+            messagebox.showerror(title="Login failed", message="Zendesk servers unavailable. Please try again at a later time.")
+        else:
+            messagebox.showerror(title="Login failed", message="Login failed for the following reason: " + str(e))
 
 f = Frame(
     master=window,
@@ -47,7 +52,8 @@ user = Label(
 user.pack( side=LEFT )
 userEntry = Entry(
     frameUser,
-    bg="#FFFFFF"
+    bg="#FFFFFF",
+    highlightbackground="#FFFFFF"
 )
 userEntry.pack( side=RIGHT )
 frameUser.pack( side=TOP )
@@ -63,8 +69,9 @@ passw = Label(
 passw.pack( side=LEFT )
 passEntry = Entry(
     framePass,
-    bg="#FFFFFF",
-    show="*"
+    background="#FFFFFF",
+    show="*",
+    highlightbackground="#FFFFFF"
 )
 passEntry.pack( side=RIGHT )
 framePass.pack( side=TOP )
@@ -72,6 +79,7 @@ enter = Button(
     f,
     text="Enter",
     bg="#FFFFFF",
+    highlightbackground="#FFFFFF",
     command=lambda: tryLoginAndJson(userEntry.get(), passEntry.get())
 )
 enter.pack( side=TOP )
