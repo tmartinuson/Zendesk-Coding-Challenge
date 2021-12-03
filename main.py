@@ -20,7 +20,8 @@ def tryLoginAndJson( user , passw ):
             raise Exception("Login failed")
         window.destroy()
         g = gui.GUI(re.json(), auth)
-    except Exception:
+    except Exception as e:
+        print(e)
         messagebox.showerror(title="Login failed", message="Username and/or password are incorrect. Please try again")
 
 f = Frame(
@@ -78,4 +79,6 @@ f.place(
     x = 100,
     y = 50
 )
+
+window.bind('<Return>', lambda x: enter.invoke())
 window.mainloop()

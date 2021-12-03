@@ -52,15 +52,22 @@ class GUI:
         ticket = self.listbox.get(self.listbox.curselection())
         self.buildTicketFrame( ticketID=ticket.split(" ")[0], master=self.master)
 
-    def clickChangePage(self, dir):
-        if self.page+dir == 0:
+    def clickChangePage(self, dir, enter):
+        page = self.page+dir
+        if enter:
+            page = dir
+        if page <= 0:
             return
-        data = grabJson(pageNum=self.page+dir, Auth=self.Auth)
+        data = grabJson(pageNum=page, Auth=self.Auth)
         if data is not None and data["tickets"]:
             self.setupList(values=data)
-            self.page += dir
+            self.page = page
             self.data = data
-            self.pageLabel['text'] = str(self.page)
+            self.pageLabel.delete(0, 'end')
+            self.pageLabel.insert(0, page)
+            return
+        self.pageLabel.delete(0, 'end')
+        self.pageLabel.insert(0, int(self.page))
 
     def setupList(self, values):
         self.listbox.delete(0,'end')
@@ -147,7 +154,7 @@ class GUI:
             text="Prev",
             fg="#283423",
             bg="#FFFFFF",
-            command=lambda: self.clickChangePage(dir=-1)
+            command=lambda: self.clickChangePage(dir=-1, enter=False)
         )
         leftButton.pack( side=LEFT )
         rightButton = Button(
@@ -155,7 +162,7 @@ class GUI:
             text="Next",
             fg="#283423",
             bg="#FFFFFF",
-            command=lambda: self.clickChangePage(dir=1)
+            command=lambda: self.clickChangePage(dir=1, enter=False)
         )
         rightButton.pack( side=RIGHT )
         buttonFrame.place(
@@ -165,11 +172,12 @@ class GUI:
         )
         pageNum = Entry(
             buttonFrame,
-            text=str(self.page),
             fg="#283423",
             bg="#FFFFFF",
             width=2
         )
+        pageNum.insert(0,str(self.page))
+        pageNum.bind('<Return>', lambda x: self.clickChangePage(int(pageNum.get()), enter=True))
         self.pageLabel=pageNum
         pageNum.pack( side=BOTTOM )
         tickets.bind('<<ListboxSelect>>', self.clickListEvent)
