@@ -62,7 +62,7 @@ class GUI:
 
     def clickListEvent(self, event):
         ticket = self.listbox.get(self.listbox.curselection())
-        self.buildTicketFrame( ticketID=ticket.split(" ")[0], master=self.master)
+        self.buildTicketFrame(ticketID=ticket.split(" ")[0], master=self.master)
 
     def clickChangePage(self, dir, enter):
         page = self.page+dir
